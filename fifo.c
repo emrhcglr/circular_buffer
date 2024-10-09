@@ -1,7 +1,7 @@
 // FIFO ADD
 #include <stdio.h>
 #include "fifo.h"
-#define  debug 0
+#define  debug 1
 
 int main(void) {
   
