@@ -1,6 +1,32 @@
 // FIFO ADD
+#include <stdio.h>
 #include "fifo.h"
+#define  debug 0
 
+int main(void) {
+  
+    FIFOQueue fifoo;
+    FIFO_init(&fifoo);
+    //FIFO_push(&fifoo,0);
+
+    // Insert bytes into the queue
+    for (int i =1; i <3; i++) 
+      FIFO_push(&fifoo, i);
+    
+
+    // Retrieve bytes from the queue
+    for (int i = 0; i < 3; i++) 
+        FIFO_pop(&fifoo);
+
+     for (int i =10; i <30; i++) 
+  // for (int i =1; i <BUFFER_SIZE; i++) 
+        FIFO_push(&fifoo, i);
+    
+     for (int i = 0; i <10; i++) 
+    FIFO_pop(&fifoo);
+
+    return 0;
+}
 
 void FIFO_init(FIFOQueue *fifo) {
     
@@ -11,41 +37,46 @@ void FIFO_init(FIFOQueue *fifo) {
     fifo->count = 0;                    // Initialize count to 0
 }
 
-unsigned char FIFO_push(FIFOQueue *fifo, unsigned char byte){
-  while(fifo->count == BUFFER_SIZE){
-        // Queue is full, wait for space to open up
-        // Implement your own waiting mechanism or block here
-        printf("buffer is full\n");
-        
-        
-    return 1;
-  }
-   
-    fifo->buffer[fifo->head] = byte;
+void FIFO_push(FIFOQueue *fifo, unsigned char tts){
+
+    fifo->buffer[fifo->head] = tts;
   
     fifo->head =(fifo->head+1) & FIFO_MASK; // it wraps around the buffer turns to zero again 
     //This is because 128 in binary is 10000000, and when ANDed with 01111111 (which is 0x7F), it results in 00000000 (i.e., 0).
-    
-    fifo->count++;
+    if (fifo->count == BUFFER_SIZE) {
+
+        // Buffer is full, move the tail to make space (overwrite oldest data)
+        if(debug)
+        printf("buffer is full\n");
+        fifo->tail = (fifo->tail + 1) & FIFO_MASK;    // Efficient wrapping for tail
+    } 
+    else {
+        fifo->count++;  // Increase count if not full
+    }
+    if (debug)
     FIFO_getStats_debug(fifo);
-    return 0;
+    
    }
 
-unsigned char FIFO_pop(FIFOQueue *fifo){
+void FIFO_pop(FIFOQueue *fifo){
     
   if (fifo->count==0){
     // fifo is empty  nothing to send.
-    printf("buffer is empty");
-    return 1;
+    if (debug)
+    printf("buffer is empty\n");
   }
 
-  unsigned char byte = fifo->buffer[fifo->tail];
+  fifo->byte_read = fifo->buffer[fifo->tail];
+  if(debug)
   fifo->buffer[fifo->tail] = 0;
-  fifo->tail = (fifo->tail+1) & FIFO_MASK;
   
-  fifo->count--;
+  if (fifo->count>0){
+    fifo->tail = (fifo->tail+1) & FIFO_MASK;
+    fifo->count--;
+  }
+
+  if (debug)
   FIFO_getStats_debug(fifo);
-  return byte;
   
 }
 
@@ -60,7 +91,7 @@ void test_buffer(void){
       }
   
   for(int i = 0; i<BUFFER_SIZE; i++){
-     byte = FIFO_pop(&test_fifo);
+     FIFO_pop(&test_fifo);
       }
   }
   
@@ -96,12 +127,3 @@ void FIFO_print_buffer(FIFOQueue *fifo){
      }
         printf("\n ");
 }
-    
-/*void test_pop(FIFOQueue *fifo){
-    unsigned byte = FIFO_pop(&fifoo);
-     
-     for(int i = 0; i<BUFFER_SIZE; i++)
-       printf(" %d\n ", fifo->buffer[i]);
-        printf("\n ");
-}
-  */  
